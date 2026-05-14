@@ -1,9 +1,11 @@
 // ===== NAVIGATION SCROLL =====
 const nav = document.getElementById('nav');
-window.addEventListener('scroll', () => {
-  if (window.scrollY > 50) nav.classList.add('scrolled');
-  else nav.classList.remove('scrolled');
-});
+if (nav) {
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 50) nav.classList.add('scrolled');
+    else nav.classList.remove('scrolled');
+  });
+}
 
 // ===== MOBILE MENU =====
 const navToggle = document.getElementById('navToggle');
@@ -18,7 +20,6 @@ if (navToggle) {
 }
 
 // ===== LIGHTBOX GALERIE =====
-const galleryItems = document.querySelectorAll('.gallery__item');
 const lightbox = document.getElementById('lightbox');
 const lightboxImg = document.getElementById('lightboxImg');
 const lightboxClose = document.getElementById('lightboxClose');
@@ -27,17 +28,21 @@ const lightboxNext = document.getElementById('lightboxNext');
 let currentImgIndex = 0;
 let imgSrcs = [];
 
-if (galleryItems.length && lightbox) {
-  galleryItems.forEach((item, index) => {
-    const src = item.querySelector('img').src;
-    imgSrcs.push(src);
-    item.addEventListener('click', () => {
-      currentImgIndex = index;
-      lightboxImg.src = src;
-      lightbox.classList.add('active');
-      document.body.style.overflow = 'hidden';
+if (lightbox) {
+  setTimeout(() => {
+    const galleryItems = document.querySelectorAll('.gallery__item');
+    galleryItems.forEach((item, index) => {
+      const img = item.querySelector('img');
+      if (!img) return;
+      imgSrcs.push(img.src);
+      item.addEventListener('click', () => {
+        currentImgIndex = index;
+        lightboxImg.src = img.src;
+        lightbox.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      });
     });
-  });
+  }, 50);
 
   const closeLightbox = () => {
     lightbox.classList.remove('active');
@@ -48,15 +53,15 @@ if (galleryItems.length && lightbox) {
     lightboxImg.src = imgSrcs[currentImgIndex];
   };
 
-  lightboxClose?.addEventListener('click', closeLightbox);
+  if (lightboxClose) lightboxClose.addEventListener('click', closeLightbox);
   lightbox.addEventListener('click', (e) => {
     if (e.target === lightbox) closeLightbox();
   });
-  lightboxPrev?.addEventListener('click', (e) => {
+  if (lightboxPrev) lightboxPrev.addEventListener('click', (e) => {
     e.stopPropagation();
     showImg(currentImgIndex - 1);
   });
-  lightboxNext?.addEventListener('click', (e) => {
+  if (lightboxNext) lightboxNext.addEventListener('click', (e) => {
     e.stopPropagation();
     showImg(currentImgIndex + 1);
   });
@@ -68,50 +73,61 @@ if (galleryItems.length && lightbox) {
   });
 }
 
-// ===== FORM RÉSERVATION =====
+// ===== FORM RÉSERVATION (page reservation.html) =====
+// Redirige maintenant vers l'espace client au lieu de WhatsApp
 const bookingForm = document.getElementById('bookingForm');
 if (bookingForm) {
   bookingForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const formData = new FormData(bookingForm);
-    const name = formData.get('name');
-    const email = formData.get('email');
-    const phone = formData.get('phone');
-    const arrival = formData.get('arrival');
-    const departure = formData.get('departure');
-    const guests = formData.get('guests');
-    const message = formData.get('message');
-
-    // Construit lien WhatsApp avec message pré-rempli
-    const text = `Bonjour, je souhaite réserver La Maison Zoé.%0A%0A` +
-                 `Nom : ${name}%0A` +
-                 `Email : ${email}%0A` +
-                 `Téléphone : ${phone}%0A` +
-                 `Arrivée : ${arrival}%0A` +
-                 `Départ : ${departure}%0A` +
-                 `Voyageurs : ${guests}%0A` +
-                 `Message : ${message || '-'}`;
-    const waUrl = `https://wa.me/590690987463?text=${text}`;
+    const params = new URLSearchParams();
+    ['name', 'email', 'phone', 'arrival', 'departure', 'guests', 'message'].forEach(k => {
+      if (formData.get(k)) params.set(k, formData.get(k));
+    });
 
     document.getElementById('formSuccess').classList.add('show');
-    setTimeout(() => { window.open(waUrl, '_blank'); }, 800);
+
+    // Redirection vers espace client avec pré-remplissage
+    setTimeout(() => {
+      // Mapper les noms de champs vers ceux de l'espace client
+      const mapping = {
+        name: 'nom',
+        email: 'email',
+        phone: 'telephone',
+        arrival: 'arrivee',
+        departure: 'depart',
+        guests: 'nb_voyageurs',
+        message: 'message'
+      };
+      const ecParams = new URLSearchParams();
+      Object.entries(mapping).forEach(([from, to]) => {
+        const v = formData.get(from);
+        if (v) ecParams.set(to, v);
+      });
+
+      // Pages sont dans /pages/, donc espace-client est dans ../espace-client/
+      window.location.href = `../espace-client/index.html?${ecParams.toString()}`;
+    }, 800);
+
     bookingForm.reset();
   });
 }
 
 // ===== REVEAL ON SCROLL =====
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      entry.target.style.opacity = '1';
-      entry.target.style.transform = 'translateY(0)';
-    }
-  });
-}, { threshold: 0.1 });
+setTimeout(() => {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.opacity = '1';
+        entry.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, { threshold: 0.1 });
 
-document.querySelectorAll('.highlight, .preview__item, .gallery__item, .review, .equip-item').forEach(el => {
-  el.style.opacity = '0';
-  el.style.transform = 'translateY(30px)';
-  el.style.transition = 'opacity .8s ease, transform .8s ease';
-  observer.observe(el);
-});
+  document.querySelectorAll('.highlight, .preview__item, .gallery__item, .review, .equip-item').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(30px)';
+    el.style.transition = 'opacity .8s ease, transform .8s ease';
+    observer.observe(el);
+  });
+}, 100);
