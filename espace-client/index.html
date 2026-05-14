@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Espace client — {{NOM}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Italiana&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/styles.css">
+<link rel="stylesheet" href="../css/espace-client.css">
+<script src="../config.js"></script>
+<script src="https://js.stripe.com/v3/"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<link rel="stylesheet" href="../css/calendar.css">
+</head>
+<body class="espace-body">
+
+<header class="ec-header">
+  <a href="../index.html" class="ec-logo">
+    <span class="ec-logo__top" data-cfg="brand-prefix"></span>
+    <span class="ec-logo__name" data-cfg="brand-name"></span>
+  </a>
+  <a data-cfg-href="whatsapp" target="_blank" class="ec-help">
+    Besoin d'aide ?
+  </a>
+</header>
+
+<!-- BARRE DE PROGRESSION -->
+<div class="ec-steps" id="ecSteps">
+  <div class="ec-step active" data-step="1">
+    <div class="ec-step__num">1</div>
+    <div class="ec-step__label">Informations</div>
+  </div>
+  <div class="ec-step" data-step="2">
+    <div class="ec-step__num">2</div>
+    <div class="ec-step__label">Récapitulatif</div>
+  </div>
+  <div class="ec-step" data-step="3">
+    <div class="ec-step__num">3</div>
+    <div class="ec-step__label">Signature</div>
+  </div>
+  <div class="ec-step" data-step="4">
+    <div class="ec-step__num">4</div>
+    <div class="ec-step__label">Paiement</div>
+  </div>
+  <div class="ec-step" data-step="5">
+    <div class="ec-step__num">5</div>
+    <div class="ec-step__label">Confirmé</div>
+  </div>
+</div>
+
+<main class="ec-main">
+
+  <!-- ===== ÉTAPE 1 : FORMULAIRE ===== -->
+  <section class="ec-section active" data-content="1">
+    <h1 class="ec-title">Vos informations</h1>
+    <p class="ec-sub">Renseignez les détails de votre séjour pour calculer le prix.</p>
+
+    <form id="formReservation" class="ec-form">
+      <div class="ec-form__row">
+        <div class="ec-form__group">
+          <label>Nom complet *</label>
+          <input type="text" name="nom" required placeholder="Prénom Nom">
+        </div>
+      </div>
+      <div class="ec-form__row">
+        <div class="ec-form__group">
+          <label>Email *</label>
+          <input type="email" name="email" required placeholder="votre@email.com">
+        </div>
+        <div class="ec-form__group">
+          <label>Téléphone *</label>
+          <input type="tel" name="telephone" required placeholder="+590...">
+        </div>
+      </div>
+      <div class="ec-form__row">
+        <div class="ec-form__group">
+          <label>Date d'arrivée *</label>
+          <input type="date" name="arrivee" required>
+        </div>
+        <div class="ec-form__group">
+          <label>Date de départ *</label>
+          <input type="date" name="depart" required>
+        </div>
+      </div>
+      <div class="ec-form__row">
+        <div class="ec-form__group">
+          <label>Nombre de voyageurs *</label>
+          <select name="nb_voyageurs" required>
+            <option value="">— Sélectionner —</option>
+            <option value="1">1 personne</option>
+            <option value="2">2 personnes</option>
+            <option value="3">3 personnes</option>
+            <option value="4">4 personnes</option>
+            <option value="5">5 personnes</option>
+            <option value="6">6 personnes</option>
+            <option value="7">7 personnes</option>
+          </select>
+        </div>
+      </div>
+      <div class="ec-form__group">
+        <label>Message (facultatif)</label>
+        <textarea name="message" rows="3" placeholder="Demandes particulières..."></textarea>
+      </div>
+
+      <div id="erreurTarif" class="ec-error" style="display:none"></div>
+
+      <button type="submit" class="ec-btn ec-btn--primary">Calculer le prix →</button>
+    </form>
+
+    <div class="ec-section-divider">
+      <span>Disponibilités</span>
+    </div>
+
+    <p style="color:var(--gris-clair);margin-bottom:1rem;font-size:.9rem">
+      Consultez les dates disponibles avant de soumettre votre demande.
+    </p>
+    <div id="calendrierDispo"></div>
+  </section>
+
+  <!-- ===== ÉTAPE 2 : RÉCAPITULATIF ===== -->
+  <section class="ec-section" data-content="2">
+    <h1 class="ec-title">Récapitulatif de votre séjour</h1>
+    <p class="ec-sub">Vérifiez les informations avant de signer le contrat.</p>
+
+    <div id="recapClient" class="ec-card"></div>
+    <div id="recapTarif" class="ec-card ec-card--tarif"></div>
+
+    <div class="ec-actions">
+      <button class="ec-btn ec-btn--ghost" onclick="EspaceClient.goStep(1)">← Modifier</button>
+      <button class="ec-btn ec-btn--primary" onclick="EspaceClient.goStep(3)">Lire et signer le contrat →</button>
+    </div>
+  </section>
+
+  <!-- ===== ÉTAPE 3 : SIGNATURE ===== -->
+  <section class="ec-section" data-content="3">
+    <h1 class="ec-title">Contrat de location</h1>
+    <p class="ec-sub">Lisez attentivement le contrat puis signez en bas de la page.</p>
+
+    <div id="contratContent" class="ec-contrat"></div>
+
+    <div class="ec-signature">
+      <h3>Signature électronique du locataire</h3>
+      <p class="ec-signature__instructions">Signez dans le cadre ci-dessous avec votre doigt (mobile) ou votre souris.</p>
+
+      <div class="ec-signature__pad-wrapper">
+        <canvas id="signaturePad" class="ec-signature__pad" width="600" height="200"></canvas>
+        <button type="button" class="ec-signature__clear" onclick="EspaceClient.clearSignature()">Effacer</button>
+      </div>
+
+      <label class="ec-checkbox">
+        <input type="checkbox" id="acceptContrat">
+        <span>J'ai lu, compris et j'accepte sans réserve toutes les clauses du présent contrat de location saisonnière.</span>
+      </label>
+
+      <div class="ec-actions">
+        <button class="ec-btn ec-btn--ghost" onclick="EspaceClient.goStep(2)">← Retour</button>
+        <button class="ec-btn ec-btn--primary" onclick="EspaceClient.validerSignature()">Valider la signature →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== ÉTAPE 4 : PAIEMENT ===== -->
+  <section class="ec-section" data-content="4">
+    <h1 class="ec-title">Paiement de l'acompte</h1>
+    <p class="ec-sub">Réglez 30% du séjour pour confirmer votre réservation. Paiement sécurisé par Stripe.</p>
+
+    <div id="paymentSummary" class="ec-card ec-card--payment"></div>
+
+    <div class="ec-payment-form">
+      <div class="ec-form__group">
+        <label>Carte bancaire</label>
+        <div id="card-element" class="ec-stripe-element"></div>
+        <div id="card-errors" class="ec-error" role="alert"></div>
+      </div>
+
+      <div class="ec-secure-info">
+        🔒 Paiement 100% sécurisé via Stripe<br>
+        Aucune donnée bancaire n'est stockée sur ce site
+      </div>
+
+      <div class="ec-actions">
+        <button class="ec-btn ec-btn--ghost" onclick="EspaceClient.goStep(3)">← Retour</button>
+        <button id="btnPaiement" class="ec-btn ec-btn--primary">Payer l'acompte</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== ÉTAPE 5 : CONFIRMATION ===== -->
+  <section class="ec-section" data-content="5">
+    <div class="ec-success">
+      <div class="ec-success__check">✓</div>
+      <h1 class="ec-title" data-cfg="confirmation-titre">Réservation confirmée !</h1>
+      <p class="ec-sub" id="confirmationMessage"></p>
+
+      <div id="confirmationDetails" class="ec-card"></div>
+
+      <div class="ec-actions ec-actions--center">
+        <button class="ec-btn ec-btn--primary" onclick="EspaceClient.telechargerContrat()">📄 Télécharger le contrat PDF</button>
+        <a href="../index.html" class="ec-btn ec-btn--ghost">Retour à l'accueil</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="ec-footer">
+  <p data-cfg="copyright"></p>
+</footer>
+
+<script src="../js/render.js"></script>
+<script src="../js/booking.js"></script>
+<script src="../js/email-service.js"></script>
+<script src="../js/calendar-service.js"></script>
+<script src="../js/espace-client.js"></script>
+</body>
+</html>
