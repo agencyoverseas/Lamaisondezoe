@@ -323,13 +323,18 @@
   background: white;
   border: 2px dashed rgba(201,169,97,.4);
   margin-bottom: 1rem;
+  width: 100%;
+  height: 200px;
 }
 .ec-signature__pad {
   display: block;
-  width: 100%;
-  height: 200px;
+  width: 100% !important;
+  height: 200px !important;
   cursor: crosshair;
   touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 .ec-signature__clear {
   position: absolute;
