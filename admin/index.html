@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — {{NOM}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Italiana&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/styles.css">
+<link rel="stylesheet" href="../css/espace-client.css">
+<link rel="stylesheet" href="../css/calendar.css">
+<link rel="stylesheet" href="admin.css">
+<script src="../config.js"></script>
+</head>
+<body class="espace-body">
+
+<!-- ÉCRAN DE LOGIN -->
+<div id="loginScreen" class="admin-login">
+  <div class="admin-login__box">
+    <div class="admin-login__logo">
+      <span class="admin-login__brand-top" data-cfg="brand-prefix"></span>
+      <span class="admin-login__brand" data-cfg="brand-name"></span>
+    </div>
+    <h1>Espace administrateur</h1>
+    <p>Accès réservé au propriétaire</p>
+    <form id="loginForm" class="admin-login__form">
+      <input type="password" id="adminPassword" placeholder="Mot de passe" required autofocus>
+      <button type="submit" class="ec-btn ec-btn--primary">Se connecter</button>
+      <div id="loginError" class="ec-error" style="display:none">Mot de passe incorrect</div>
+    </form>
+    <a href="../index.html" class="admin-login__back">← Retour au site</a>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="adminApp" style="display:none">
+
+  <header class="admin-header">
+    <div class="admin-header__left">
+      <a href="../index.html" class="ec-logo">
+        <span class="ec-logo__top" data-cfg="brand-prefix"></span>
+        <span class="ec-logo__name" data-cfg="brand-name"></span>
+      </a>
+      <span class="admin-badge">ADMIN</span>
+    </div>
+    <div class="admin-header__right">
+      <span id="adminLastSync"></span>
+      <button onclick="Admin.logout()" class="admin-logout">Déconnexion</button>
+    </div>
+  </header>
+
+  <nav class="admin-nav">
+    <button class="admin-nav__item active" data-tab="dashboard">📊 Tableau de bord</button>
+    <button class="admin-nav__item" data-tab="reservations">📋 Réservations</button>
+    <button class="admin-nav__item" data-tab="calendrier">📅 Calendrier</button>
+    <button class="admin-nav__item" data-tab="settings">⚙️ Paramètres</button>
+  </nav>
+
+  <main class="admin-main">
+
+    <!-- DASHBOARD -->
+    <section class="admin-tab active" data-content="dashboard">
+      <h1 class="ec-title">Tableau de bord</h1>
+      <p class="ec-sub">Vue d'ensemble de votre activité</p>
+
+      <div class="admin-stats" id="adminStats"></div>
+
+      <div class="admin-section">
+        <h2>Réservations récentes</h2>
+        <div id="adminRecentReservations"></div>
+      </div>
+    </section>
+
+    <!-- RÉSERVATIONS -->
+    <section class="admin-tab" data-content="reservations">
+      <h1 class="ec-title">Toutes les réservations</h1>
+      <p class="ec-sub">Cliquez sur une ligne pour voir les détails</p>
+
+      <div class="admin-filters">
+        <select id="filterStatut">
+          <option value="">Tous les statuts</option>
+          <option value="en_cours">En cours</option>
+          <option value="signe">Signé (en attente paiement)</option>
+          <option value="confirme">Confirmé</option>
+          <option value="annule">Annulé</option>
+        </select>
+        <input type="text" id="filterSearch" placeholder="Rechercher (nom, email...)">
+        <button onclick="Admin.exporterCSV()" class="ec-btn ec-btn--ghost">📥 Export CSV</button>
+      </div>
+
+      <div class="admin-table-wrapper">
+        <table class="admin-table" id="adminReservationsTable">
+          <thead>
+            <tr>
+              <th>Réf.</th>
+              <th>Client</th>
+              <th>Dates</th>
+              <th>Voyageurs</th>
+              <th>Montant</th>
+              <th>Statut</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- CALENDRIER -->
+    <section class="admin-tab" data-content="calendrier">
+      <h1 class="ec-title">Calendrier des disponibilités</h1>
+      <p class="ec-sub">Synchronisé avec Google Calendar</p>
+
+      <div class="admin-cal-info" id="adminCalInfo"></div>
+      <div id="adminCalendar"></div>
+    </section>
+
+    <!-- PARAMÈTRES -->
+    <section class="admin-tab" data-content="settings">
+      <h1 class="ec-title">Paramètres</h1>
+      <p class="ec-sub">Configuration rapide. Pour tout modifier : ouvrez le fichier <code>config.js</code></p>
+
+      <div class="admin-section">
+        <h2>État de configuration</h2>
+        <div id="adminConfigStatus"></div>
+      </div>
+
+      <div class="admin-section">
+        <h2>Actions</h2>
+        <div class="admin-actions-grid">
+          <button onclick="Admin.changerMotDePasse()" class="ec-btn ec-btn--ghost">🔑 Changer le mot de passe</button>
+          <button onclick="Admin.viderCache()" class="ec-btn ec-btn--ghost">🗑️ Vider le cache</button>
+          <button onclick="Admin.exporterDonnees()" class="ec-btn ec-btn--ghost">💾 Exporter toutes les données</button>
+          <button onclick="Admin.afficherAide()" class="ec-btn ec-btn--ghost">❓ Aide</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- MODAL DÉTAIL RÉSERVATION -->
+<div id="modalReservation" class="admin-modal" style="display:none">
+  <div class="admin-modal__overlay" onclick="Admin.fermerModal()"></div>
+  <div class="admin-modal__content">
+    <button class="admin-modal__close" onclick="Admin.fermerModal()">✕</button>
+    <div id="modalReservationContent"></div>
+  </div>
+</div>
+
+<script src="../js/render.js"></script>
+<script src="../js/booking.js"></script>
+<script src="../js/calendar-service.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>
