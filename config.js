@@ -676,3 +676,14 @@ CONFIG.admin = {
     { titre: "Paramètres",        slug: "settings" }
   ]
 };
+
+
+/* ============================================================
+   19. SIGNATURE NEXUSAI (flottante en bas à droite)
+   ============================================================ */
+CONFIG.nexusai = {
+  afficher: true,
+  texte: "Powered by NexusAI",
+  url: "https://t.me/nexusai_wassou_bot",
+  cible: "_blank"
+};
