@@ -1,0 +1,138 @@
+/* ============================================================
+   CALENDRIER
+   ============================================================ */
+
+.cal-wrapper {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.cal-month {
+  background: var(--noir-2);
+  border: 1px solid rgba(201,169,97,.2);
+  padding: 1.5rem;
+}
+
+.cal-month__header {
+  text-align: center;
+  font-family: var(--f-display);
+  font-size: 1.3rem;
+  color: var(--or-clair);
+  margin-bottom: 1rem;
+  font-style: italic;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.cal-weekday {
+  text-align: center;
+  font-family: var(--f-sans);
+  font-size: .65rem;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--or);
+  padding: .5rem 0;
+}
+
+.cal-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--f-sans);
+  font-size: .85rem;
+  color: var(--creme);
+  background: rgba(28, 58, 28, .3);
+  border: 1px solid rgba(201,169,97,.05);
+  cursor: pointer;
+  transition: all .2s ease;
+  position: relative;
+}
+
+.cal-day:not(.cal-day--blocked):not(.cal-day--past):not(.cal-day--empty):hover {
+  background: var(--or);
+  color: var(--noir);
+  transform: scale(1.05);
+}
+
+.cal-day--empty {
+  background: transparent;
+  border: none;
+  cursor: default;
+}
+
+.cal-day--past {
+  background: var(--noir-3);
+  color: rgba(245, 239, 224, .25);
+  cursor: not-allowed;
+}
+
+.cal-day--blocked {
+  background: rgba(168, 50, 50, .35);
+  color: rgba(255, 200, 200, .7);
+  cursor: not-allowed;
+  text-decoration: line-through;
+  text-decoration-color: rgba(201,169,97,.4);
+}
+
+.cal-day--today {
+  border: 2px solid var(--or);
+  font-weight: 700;
+}
+
+.cal-day--selected {
+  background: var(--or) !important;
+  color: var(--noir) !important;
+  font-weight: 700;
+}
+
+.cal-day--in-range {
+  background: rgba(201,169,97,.25);
+}
+
+/* LÉGENDE */
+.cal-legend {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: var(--noir-3);
+  flex-wrap: wrap;
+}
+
+.cal-legend__item {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  font-family: var(--f-sans);
+  font-size: .75rem;
+  letter-spacing: .1em;
+  color: var(--creme);
+}
+
+.cal-dot {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+}
+
+.cal-dot--dispo { background: rgba(28, 58, 28, .8); border: 1px solid rgba(122, 158, 61, .5); }
+.cal-dot--indispo { background: rgba(168, 50, 50, .5); }
+.cal-dot--today { border: 2px solid var(--or); background: transparent; }
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .cal-wrapper { grid-template-columns: 1fr; }
+  .cal-day { font-size: .75rem; }
+  .cal-weekday { font-size: .55rem; }
+  .cal-legend { gap: 1rem; }
+  .cal-legend__item { font-size: .7rem; }
+}
