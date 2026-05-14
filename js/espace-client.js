@@ -118,7 +118,11 @@ const EspaceClient = {
 
     // Actions spécifiques par étape
     if (num === 2) this.afficherRecap();
-    if (num === 3) this.afficherContrat();
+    if (num === 3) {
+      this.afficherContrat();
+      // Reconfigurer canvas APRÈS que la section soit visible
+      setTimeout(() => this.configurerCanvas(), 100);
+    }
     if (num === 4) this.afficherPaiement();
     if (num === 5) this.afficherConfirmation();
 
@@ -295,40 +299,85 @@ const EspaceClient = {
     this.signaturePad = document.getElementById('signaturePad');
     if (!this.signaturePad) return;
 
-    // Adapter la résolution au pixel ratio
-    const ratio = window.devicePixelRatio || 1;
-    const rect = this.signaturePad.getBoundingClientRect();
-    this.signaturePad.width = rect.width * ratio;
-    this.signaturePad.height = rect.height * ratio;
-    this.signatureCtx = this.signaturePad.getContext('2d');
-    this.signatureCtx.scale(ratio, ratio);
-    this.signatureCtx.lineWidth = 2.5;
-    this.signatureCtx.lineCap = 'round';
-    this.signatureCtx.strokeStyle = '#0a0a0a';
+    // Configurer le canvas (sera reconfiguré quand l'étape 3 sera affichée)
+    this.configurerCanvas();
 
     // Pointer events (souris + tactile)
     this.signaturePad.addEventListener('pointerdown', (e) => this.startDraw(e));
     this.signaturePad.addEventListener('pointermove', (e) => this.draw(e));
     this.signaturePad.addEventListener('pointerup', () => this.stopDraw());
-    this.signaturePad.addEventListener('pointerout', () => this.stopDraw());
+    this.signaturePad.addEventListener('pointercancel', () => this.stopDraw());
+    this.signaturePad.addEventListener('pointerleave', () => this.stopDraw());
+
+    // Empêcher le scroll sur mobile pendant la signature
+    this.signaturePad.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
+    this.signaturePad.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+
+    // Réajuster si la fenêtre change de taille
+    window.addEventListener('resize', () => {
+      if (document.querySelector('[data-content="3"]').classList.contains('active')) {
+        this.configurerCanvas();
+      }
+    });
+  },
+
+  configurerCanvas() {
+    if (!this.signaturePad) return;
+
+    // Sauvegarder la signature actuelle si elle existe
+    let imageData = null;
+    if (this.signatureCtx) {
+      try { imageData = this.signaturePad.toDataURL(); } catch(e) {}
+    }
+
+    const ratio = window.devicePixelRatio || 1;
+    const rect = this.signaturePad.getBoundingClientRect();
+
+    // Définir la taille interne du canvas selon sa taille affichée
+    this.signaturePad.width = rect.width * ratio;
+    this.signaturePad.height = rect.height * ratio;
+
+    this.signatureCtx = this.signaturePad.getContext('2d');
+    this.signatureCtx.scale(ratio, ratio);
+    this.signatureCtx.lineWidth = 2.5;
+    this.signatureCtx.lineCap = 'round';
+    this.signatureCtx.lineJoin = 'round';
+    this.signatureCtx.strokeStyle = '#0a0a0a';
+
+    // Restaurer la signature si elle existait
+    if (imageData && imageData !== 'data:,') {
+      const img = new Image();
+      img.onload = () => {
+        this.signatureCtx.drawImage(img, 0, 0, rect.width, rect.height);
+      };
+      img.src = imageData;
+    }
   },
 
   startDraw(e) {
+    e.preventDefault();
+    this.signaturePad.setPointerCapture(e.pointerId);
     this.isDrawing = true;
     const pos = this.getPos(e);
     this.signatureCtx.beginPath();
     this.signatureCtx.moveTo(pos.x, pos.y);
+    // Tracer un point unique au démarrage (utile si l'utilisateur tape sans bouger)
+    this.signatureCtx.lineTo(pos.x + 0.01, pos.y + 0.01);
+    this.signatureCtx.stroke();
   },
 
   draw(e) {
     if (!this.isDrawing) return;
+    e.preventDefault();
     const pos = this.getPos(e);
     this.signatureCtx.lineTo(pos.x, pos.y);
     this.signatureCtx.stroke();
   },
 
   stopDraw() {
+    if (!this.isDrawing) return;
     this.isDrawing = false;
+    this.signatureCtx.beginPath();
   },
 
   getPos(e) {
@@ -341,14 +390,18 @@ const EspaceClient = {
 
   clearSignature() {
     if (!this.signatureCtx) return;
-    this.signatureCtx.clearRect(0, 0, this.signaturePad.width, this.signaturePad.height);
+    const rect = this.signaturePad.getBoundingClientRect();
+    this.signatureCtx.clearRect(0, 0, rect.width, rect.height);
   },
 
   isSignatureEmpty() {
-    const blank = document.createElement('canvas');
-    blank.width = this.signaturePad.width;
-    blank.height = this.signaturePad.height;
-    return this.signaturePad.toDataURL() === blank.toDataURL();
+    if (!this.signatureCtx) return true;
+    const pixels = this.signatureCtx.getImageData(0, 0, this.signaturePad.width, this.signaturePad.height).data;
+    // Vérifier si tous les pixels sont transparents
+    for (let i = 3; i < pixels.length; i += 4) {
+      if (pixels[i] !== 0) return false;
+    }
+    return true;
   },
 
   validerSignature() {
