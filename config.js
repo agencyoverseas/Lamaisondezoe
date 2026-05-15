@@ -68,7 +68,7 @@ const CONFIG = {
      ============================================================ */
   logement: {
     nb_chambres: 3,
-    nb_voyageurs_max: 7,
+    nb_voyageurs_max: 6,
     type: "Maison",
     surface: "",                         // optionnel, ex: "120 m²"
 
